@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Conversation } from "@/shared/types/chat";
 import { loadConversations, saveConversations } from "@/shared/lib/storage";
-
+import { Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export function Sidebar() {
   const router = useRouter();
@@ -77,7 +78,8 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="w-72 border-r h-screen flex flex-col p-4">
+    <aside className="w-72 border-r h-screen flex flex-col p-4 gap-2">
+      <h1 className="text-black text-2xl font-bold">ChatBot Console</h1>
       <Button
         variant="outline"
         className="mb-3 w-full"
@@ -100,7 +102,7 @@ export function Sidebar() {
           return (
             <div
               key={c.id}
-              className={`flex items-center gap-2 rounded px-2 py-1 cursor-pointer ${
+              className={`flex items-center gap-1 rounded px-1 py-1 cursor-pointer ${
                 isActive ? "bg-muted font-medium" : "hover:bg-muted"
               }`}
             >
@@ -128,8 +130,9 @@ export function Sidebar() {
                   setEditingId(c.id);
                   setEditingTitle(c.title);
                 }}
+                
               >
-                ✏️
+                <Edit2 className="w-4 h-4" />
               </Button>
 
               <Button
@@ -138,7 +141,7 @@ export function Sidebar() {
                 className="text-destructive"
                 onClick={() => setDeleteId(c.id)}
               >
-                🗑
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           );
@@ -148,8 +151,13 @@ export function Sidebar() {
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
+            <DialogDescription className="sr-only">
+              Description
+            </DialogDescription>
             <DialogTitle>Delete conversation?</DialogTitle>
+            <p id="delete-dialog-description">This action cannot be undone.</p>
           </DialogHeader>
+
           <DialogFooter>
             <Button variant="destructive" onClick={deleteConversation}>
               Delete

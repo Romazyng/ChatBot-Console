@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Conversation } from "@/shared/types/chat";
 import { loadConversations, saveConversations } from "@/shared/lib/storage";
-import { Chat } from "@/shared/ui/Chat";
+import { Chat } from "@/components/Chat";
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +12,7 @@ export default function ChatPage() {
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
 
-  // Загружаем conversation только один раз
+  // загружаем conversation только один раз
   useEffect(() => {
     const all = loadConversations();
     const found = all.find((c) => c.id === id);
@@ -25,13 +25,13 @@ export default function ChatPage() {
     setConversation(found);
   }, [id, router]);
 
-  // Функция для обновления conversation и сохранения в localStorage
+  // функция для обновления conversation и сохранения в localstorage
   const updateConversation = (updated: Conversation) => {
-    setConversation(updated); // <-- обновляем state локально
+    setConversation(updated); // обновляю state локально
     const all = loadConversations().map((c) =>
       c.id === updated.id ? updated : c
     );
-    saveConversations(all); // <-- синхронизация с localStorage
+    saveConversations(all); // синхронизация с localStorage
   };
 
   if (!conversation) return null;

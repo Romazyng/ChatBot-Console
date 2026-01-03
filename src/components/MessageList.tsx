@@ -28,18 +28,17 @@ export function MessageList({
     Prism.highlightAll();
   }, [messages]);
 
-  // Конвертируем Markdown в HTML с подсветкой кода
+  // ⚡ Конвертация Markdown в HTML с подсветкой кода
   const contentToHtml = (markdown: string) => {
+    // создаем кастомный renderer
     const renderer = new marked.Renderer();
 
     renderer.code = ({
       text,
       lang,
-      escaped,
     }: {
       text: string;
-      lang?: string;
-      escaped?: boolean;
+      lang?: string | null;
     }) => {
       const language = lang || "plaintext";
       const html = Prism.highlight(
@@ -47,6 +46,7 @@ export function MessageList({
         Prism.languages[language] || Prism.languages.plaintext,
         language
       );
+
       return `
         <pre class="language-${language}" style="position: relative; background:#2d2d2d; color:#fff; padding:8px; border-radius:4px; overflow-x:auto;">
           <code>${html}</code>
@@ -59,14 +59,14 @@ export function MessageList({
       breaks: true, // переносы строк
     });
 
-    return marked(markdown, { renderer });
+    return marked.parse(markdown, { renderer });
   };
 
-  // Рендер контента с HTML
   const renderContent = (content: string) => {
     return <div dangerouslySetInnerHTML={{ __html: contentToHtml(content) }} />;
   };
 
+  // Обработка клика по кнопке Copy
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -78,13 +78,9 @@ export function MessageList({
       const codeEl = target.previousElementSibling as HTMLElement;
       if (!codeEl) return;
 
-      // Копируем текст
       navigator.clipboard.writeText(codeEl.innerText).then(() => {
-        // Сохраняем старый текст кнопки
         const oldText = target.innerText;
         target.innerText = "Copied ✓";
-
-        // Через 1.5 сек возвращаем старый текст
         setTimeout(() => {
           target.innerText = oldText;
         }, 1500);
@@ -98,7 +94,7 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className="max-h-[70vh] overflow-y-auto flex flex-col gap-5 mt-16 mb-16 h-screen"
+      className="max-h-[85vh] overflow-y-auto flex flex-col gap-2 pr-5"
     >
       {messages.map((m, i) => (
         <div
@@ -109,6 +105,7 @@ export function MessageList({
             borderRadius: 8,
             maxWidth: "80%",
             alignSelf: m.role === "User" ? "flex-end" : "flex-start",
+            wordBreak: "break-word",
           }}
         >
           <strong>{m.role}</strong>

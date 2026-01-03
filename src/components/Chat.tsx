@@ -106,14 +106,19 @@ export function Chat({
   };
 
   return (
-    <>
-      <MessageList messages={messages} onRetry={retry} />
-      <Composer
-        onSend={async (text) => await sendMessage(text)}
-        disabled={isSending}
-        isStreaming={!!streamingController}
-        onStop={() => streamingController?.abort()}
-      />
-    </>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto">
+        <MessageList messages={messages} onRetry={retry} />
+      </div>
+
+      <div className="mt-auto">
+        <Composer
+          onSend={async (text) => await sendMessage(text)}
+          disabled={isSending}
+          isStreaming={!!streamingController}
+          onStop={() => streamingController?.abort()}
+        />
+      </div>
+    </div>
   );
 }
