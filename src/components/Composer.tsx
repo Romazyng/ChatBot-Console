@@ -22,7 +22,7 @@ export function Composer({
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Возврат фокуса после отправки
+  // возврат фокуса после отправки
   useEffect(() => {
     if (!disabled && textareaRef.current) {
       textareaRef.current.focus();

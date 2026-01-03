@@ -75,18 +75,16 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Кнопка гамбургер для мобилок */}
       {!sidebarOpen && (
         <Button
           variant="outline"
           className="md:hidden fixed top-4 left-4 z-50"
-          onClick={() => setSidebarOpen(true)} // открываем sidebar
+          onClick={() => setSidebarOpen(true)} // открывает sidebar
         >
           <Menu className="w-5 h-5" />
         </Button>
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed md:relative top-0 left-0 h-screen w-72 bg-white border-r p-4 gap-2 flex flex-col
@@ -147,6 +145,7 @@ export function Sidebar() {
                 <Button
                   size="icon"
                   variant="ghost"
+                  name="edit"
                   onClick={() => {
                     setEditingId(c.id);
                     setEditingTitle(c.title);
@@ -158,6 +157,7 @@ export function Sidebar() {
                 <Button
                   size="icon"
                   variant="ghost"
+                  aria-label="delete"
                   className="text-destructive"
                   onClick={() => setDeleteId(c.id)}
                 >
@@ -168,7 +168,6 @@ export function Sidebar() {
           })}
         </div>
 
-        {/* Закрыть Sidebar кнопкой для мобилок */}
         <Button
           variant="outline"
           className="md:hidden mt-2"
@@ -201,7 +200,6 @@ export function Sidebar() {
         </Dialog>
       </aside>
 
-      {/* Overlay для мобильного sidebar */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-30 md:hidden"

@@ -55,7 +55,7 @@ describe("Sidebar", () => {
     render(<Sidebar />);
 
     // нажимаем кнопку удаления у первого чата
-    const deleteButtons = screen.getAllByRole("button", { name: "🗑" });
+    const deleteButtons = screen.getAllByRole("button", { name: "delete" });
     await user.click(deleteButtons[0]);
 
     // открылась модалка

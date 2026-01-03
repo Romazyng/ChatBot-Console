@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     const { message } = await req.json();
 
-    // Создаём ReadableStream для отправки чанков
+    // создаём ReadableStream для отправки чанков
     const stream = new ReadableStream({
       async start(controller) {
         try {

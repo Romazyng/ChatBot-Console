@@ -1,15 +1,19 @@
 import "@testing-library/jest-dom";
+import { TextEncoder, TextDecoder } from "util";
+
+global.TextEncoder = TextEncoder as any;
+global.TextDecoder = TextDecoder as any;
 
 Element.prototype.scrollTo = jest.fn();
 
-// Мок CSS, чтобы не падали импорты CSS/SCSS
+// Мок CSS
 jest.mock("*.css", () => ({}));
 jest.mock("*.scss", () => ({}));
 jest.mock("*.sass", () => ({}));
 
-// Мок ESM-пакета marked
+// Мок marked
 jest.mock("marked", () => ({
   marked: {
-    parse: (text: string) => text, // просто возвращаем текст без разметки
+    parse: (text: string) => text,
   },
 }));

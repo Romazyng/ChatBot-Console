@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import { Message } from "@/shared/types/chat";
-import { marked } from "marked";
+import { formatText } from "@/shared/lib/formatText";
 
 export function MessageList({
   messages,
@@ -15,7 +15,67 @@ export function MessageList({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Скролл вниз при новых сообщениях
+  const renderContent = (content: string) => {
+    // разделяем код и обычный текст по ``` (если нужно)
+    const parts = content.split(/```([\w]*)\n([\s\S]*?)```/g);
+
+    return (
+      <div>
+        {parts.map((part, i) => {
+          // part — это код или обычный текст
+          if (i % 3 === 0) {
+            // обычный текст
+            return (
+              <span
+                key={i}
+                dangerouslySetInnerHTML={{
+                  __html: formatText(part),
+                }}
+              />
+            );
+          } else if (i % 3 === 2) {
+            // код
+            const lang = parts[i - 1] || "plaintext";
+            const html = Prism.highlight(
+              part,
+              Prism.languages[lang] || Prism.languages.plaintext,
+              lang
+            );
+            return (
+              <pre
+                key={i}
+                style={{
+                  position: "relative",
+                  background: "#2d2d2d",
+                  color: "#fff",
+                  padding: 8,
+                  borderRadius: 4,
+                  overflowX: "auto",
+                }}
+              >
+                <code dangerouslySetInnerHTML={{ __html: html }} />
+                <button
+                  className="copy-btn"
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    fontSize: 12,
+                    padding: "2px 6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Copy
+                </button>
+              </pre>
+            );
+          }
+        })}
+      </div>
+    );
+  };
+
+  // скролл вниз
   useEffect(() => {
     containerRef.current?.scrollTo({
       top: containerRef.current.scrollHeight,
@@ -23,50 +83,12 @@ export function MessageList({
     });
   }, [messages]);
 
-  // Переподсветка Prism после рендера
+  // переподсветка prism
   useEffect(() => {
     Prism.highlightAll();
   }, [messages]);
 
-  // ⚡ Конвертация Markdown в HTML с подсветкой кода
-  const contentToHtml = (markdown: string) => {
-    // создаем кастомный renderer
-    const renderer = new marked.Renderer();
-
-    renderer.code = ({
-      text,
-      lang,
-    }: {
-      text: string;
-      lang?: string | null;
-    }) => {
-      const language = lang || "plaintext";
-      const html = Prism.highlight(
-        text,
-        Prism.languages[language] || Prism.languages.plaintext,
-        language
-      );
-
-      return `
-        <pre class="language-${language}" style="position: relative; background:#2d2d2d; color:#fff; padding:8px; border-radius:4px; overflow-x:auto;">
-          <code>${html}</code>
-          <button class="copy-btn" style="position:absolute; top:4px; right:4px; font-size:12px; padding:2px 6px; cursor:pointer;">Copy</button>
-        </pre>
-      `;
-    };
-
-    marked.setOptions({
-      breaks: true, // переносы строк
-    });
-
-    return marked.parse(markdown, { renderer });
-  };
-
-  const renderContent = (content: string) => {
-    return <div dangerouslySetInnerHTML={{ __html: contentToHtml(content) }} />;
-  };
-
-  // Обработка клика по кнопке Copy
+  // copy button
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -74,16 +96,13 @@ export function MessageList({
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.classList.contains("copy-btn")) return;
-
       const codeEl = target.previousElementSibling as HTMLElement;
       if (!codeEl) return;
 
       navigator.clipboard.writeText(codeEl.innerText).then(() => {
         const oldText = target.innerText;
         target.innerText = "Copied ✓";
-        setTimeout(() => {
-          target.innerText = oldText;
-        }, 1500);
+        setTimeout(() => (target.innerText = oldText), 1500);
       });
     };
 
@@ -99,6 +118,7 @@ export function MessageList({
       {messages.map((m, i) => (
         <div
           key={m.id}
+          data-testid={m.role === "Assistant" ? `assistant-${m.id}` : undefined}
           style={{
             background: m.role === "User" ? "#eee" : "#f6f6ff",
             padding: 8,

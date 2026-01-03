@@ -1,37 +1,28 @@
-// src/__tests__/Chat.test.tsx
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Chat } from "@/components/Chat";
 import "@testing-library/jest-dom";
-
-// Мокаем fetch
+import { TextEncoder, TextDecoder } from "util";
+// мокаем fetch
 global.fetch = jest.fn();
 
 beforeEach(() => {
   (fetch as jest.Mock).mockReset();
 });
 
-const conversationMock = {
-  id: "1",
-  title: "Test Chat",
-  messages: [],
-};
-
 describe("Chat", () => {
   test("отправка сообщения и получение ответа ассистента", async () => {
     const user = userEvent.setup();
 
-    // Мокаем fetch, чтобы вернуть ответ ассистента
     (fetch as jest.Mock).mockResolvedValueOnce({
       body: {
         getReader: () => {
-          let called = false;
+          const chunks = ["Hello from assistant"];
           return {
             read: async () => {
-              if (!called) {
-                called = true;
+              if (chunks.length > 0) {
                 return {
-                  value: new TextEncoder().encode("Hello from assistant"),
+                  value: new TextEncoder().encode(chunks.shift()!),
                   done: false,
                 };
               }
@@ -46,26 +37,87 @@ describe("Chat", () => {
 
     render(
       <Chat
-        conversation={conversationMock}
+        conversation={{ id: "1", title: "Test Chat", messages: [] }}
         onUpdateConversation={onUpdateConversation}
       />
     );
 
-    // Находим текстбокс и отправляем сообщение
     const input = screen.getByRole("textbox");
     await user.type(input, "Hello{Enter}");
 
-    // Проверяем, что сообщение пользователя появилось
+    // пользовательское сообщение
     expect(screen.getByText("Hello")).toBeInTheDocument();
 
-    // Ждём появления ответа ассистента
-    await waitFor(() =>
+    await waitFor(() => {
       expect(
-        screen.getByText((content) => content.includes("Hello from assistant"))
-      ).toBeInTheDocument()
+        screen.getByText((text) => text.includes("Hello from assistant"))
+      ).toBeInTheDocument();
+    });
+
+    expect(onUpdateConversation).toHaveBeenCalled();
+  });
+
+  test("ошибка ответа ассистента и повторная отправка (retry)", async () => {
+    const user = userEvent.setup();
+
+    // первый запрос — ошибка
+    (fetch as jest.Mock)
+      .mockRejectedValueOnce(new Error("Network error"))
+      // второй запрос — успешный стрим
+      .mockResolvedValueOnce({
+        body: {
+          getReader: () => {
+            const chunks = ["Recovered answer"];
+            return {
+              read: async () => {
+                if (chunks.length > 0) {
+                  return {
+                    value: new TextEncoder().encode(chunks.shift()!),
+                    done: false,
+                  };
+                }
+                return { value: undefined, done: true };
+              },
+            };
+          },
+        },
+      });
+
+    const onUpdateConversation = jest.fn();
+
+    render(
+      <Chat
+        conversation={{ id: "1", title: "Test Chat", messages: [] }}
+        onUpdateConversation={onUpdateConversation}
+      />
     );
 
-    // Проверяем, что callback обновления вызвался
+    const input = screen.getByRole("textbox");
+
+    // отправляем сообщение
+    await user.type(input, "Hello{Enter}");
+
+    // проверяем, что сообщение пользователя есть
+    expect(screen.getByText("Hello")).toBeInTheDocument();
+
+    // ждём кнопку retry
+    const retryButton = await screen.findByText("Retry");
+    expect(retryButton).toBeInTheDocument();
+
+    // жмём retry
+    await user.click(retryButton);
+
+    // ждём успешный ответ ассистента
+    await waitFor(() => {
+      expect(
+        screen.getByText((text) => text.includes("Recovered answer"))
+      ).toBeInTheDocument();
+    });
+
+    // fetch должен быть вызван 2 раза
+    expect(fetch).toHaveBeenCalledTimes(2);
+
+    // conversation обновлялся
     expect(onUpdateConversation).toHaveBeenCalled();
   });
 });

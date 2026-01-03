@@ -17,12 +17,12 @@ export function Chat({
   const [streamingController, setStreamingController] =
     useState<AbortController | null>(null);
 
-  // ⚡ Синхронизация локальных сообщений с conversation при смене чата
+  // синхронизация локальных сообщений с conversation при смене чата
   useEffect(() => {
     setMessages(conversation.messages);
   }, [conversation.id]);
 
-  // ⚡ Синхронизация глобального conversation после изменения messages
+  // синхронизация глобального conversation после изменения messages
   useEffect(() => {
     onUpdateConversation({ ...conversation, messages });
     // eslint-disable-next-line react-hooks/exhaustive-deps
