@@ -55,11 +55,16 @@ export function Composer({
 
         <InputGroupAddon align="block-end">
           {isStreaming ? (
-            <InputGroupText className="text-red-500 cursor-pointer" onClick={onStop}>
+            <InputGroupText
+              className="text-red-500 cursor-pointer"
+              onClick={onStop}
+            >
               Stop
             </InputGroupText>
           ) : disabled ? (
-            <InputGroupText className="text-muted-foreground text-xs">sending…</InputGroupText>
+            <InputGroupText className="text-muted-foreground text-xs">
+              sending…
+            </InputGroupText>
           ) : (
             <InputGroupText className="text-muted-foreground text-xs">
               {1200 - value.length} characters left

@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Conversation } from "@/shared/types/chat";
-import { loadConversations, saveConversations } from "@/shared/lib/storage";
 import { Edit2, Trash2, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,62 +13,56 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { useConversations } from "@/hooks/useConversations";
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const {
+    conversations,
+    createConversation: createConv,
+    updateConversationTitle,
+    deleteConversation: deleteConv,
+  } = useConversations();
+
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false); // для мобилок
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    setConversations(loadConversations());
-  }, []);
-
-  const activeId = pathname?.startsWith("/chat/")
-    ? pathname.replace("/chat/", "")
-    : null;
-
-  const saveAll = (next: Conversation[]) => {
-    setConversations(next);
-    saveConversations(next);
-  };
+  const activeId = useMemo(
+    () =>
+      pathname?.startsWith("/chat/") ? pathname.replace("/chat/", "") : null,
+    [pathname]
+  );
 
   const createConversation = () => {
-    const conv: Conversation = {
-      id: crypto.randomUUID(),
-      title: "New Chat",
-      messages: [],
-    };
-    const next = [conv, ...conversations];
-    saveAll(next);
+    const conv = createConv();
     router.push(`/chat/${conv.id}`);
-    setSidebarOpen(false); // закрываем sidebar при создании чата
+    setSidebarOpen(false);
   };
 
   const saveTitle = (id: string) => {
-    saveAll(
-      conversations.map((c) =>
-        c.id === id ? { ...c, title: editingTitle } : c
-      )
-    );
+    updateConversationTitle(id, editingTitle);
     setEditingId(null);
     setEditingTitle("");
   };
 
-  const deleteConversation = () => {
+  const handleDeleteConversation = () => {
     if (!deleteId) return;
-    saveAll(conversations.filter((c) => c.id !== deleteId));
+    deleteConv(deleteId);
     if (deleteId === activeId) router.push("/");
     setDeleteId(null);
   };
 
-  const filtered = conversations.filter((c) =>
-    c.title.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      conversations.filter((c) =>
+        c.title.toLowerCase().includes(search.toLowerCase())
+      ),
+    [conversations, search]
   );
 
   return (
@@ -179,17 +171,14 @@ export function Sidebar() {
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogDescription className="sr-only">
-                Description
-              </DialogDescription>
               <DialogTitle>Delete conversation?</DialogTitle>
-              <p id="delete-dialog-description">
-                This action cannot be undone.
-              </p>
+              <DialogDescription className="sr-only">
+                description goes here This action cannot be undone.
+              </DialogDescription>
             </DialogHeader>
 
             <DialogFooter>
-              <Button variant="destructive" onClick={deleteConversation}>
+              <Button variant="destructive" onClick={handleDeleteConversation}>
                 Delete
               </Button>
               <Button variant="outline" onClick={() => setDeleteId(null)}>

@@ -16,7 +16,7 @@ export function MessageList({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const renderContent = (content: string) => {
-    // разделяем код и обычный текст по ``` (если нужно)
+    // разделяем код и обычный текст по ```
     const parts = content.split(/```([\w]*)\n([\s\S]*?)```/g);
 
     return (

@@ -6,7 +6,19 @@ const client = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const { messages: conversationHistory } = await req.json();
+
+    // преобразуем формат сообщений для OpenAI API
+    const openaiMessages: Array<{
+      role: "system" | "user" | "assistant";
+      content: string;
+    }> = [
+      { role: "system", content: "You are a helpful assistant." },
+      ...conversationHistory.map((msg: { role: string; content: string }) => ({
+        role: msg.role === "User" ? "user" : "assistant",
+        content: msg.content,
+      })),
+    ];
 
     // создаём ReadableStream для отправки чанков
     const stream = new ReadableStream({
@@ -14,10 +26,7 @@ export async function POST(req: Request) {
         try {
           const completion = await client.chat.completions.create({
             model: "gpt-4o-mini",
-            messages: [
-              { role: "system", content: "You are a helpful assistant." },
-              { role: "user", content: message },
-            ],
+            messages: openaiMessages,
             stream: true, // включаем потоковую отдачу
           });
 

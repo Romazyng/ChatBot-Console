@@ -3,15 +3,15 @@ export function formatText(text: string): string {
 
   let html = text;
 
-  // Заголовки 
+  // Заголовки
   html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
   html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
   html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
 
-  //  Bold 
+  //  Bold
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-  //  Italic 
+  //  Italic
   html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
 
   // Inline code
