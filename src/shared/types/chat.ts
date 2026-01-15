@@ -1,6 +1,6 @@
 export type Message = {
   id: string;
-  role: "User" | "Assistant";
+  role: "user" | "assistant";
   content: string;
   status?: "sending" | "error" | "stopped";
 };

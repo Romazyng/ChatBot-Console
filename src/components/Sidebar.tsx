@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Edit2, Trash2, Menu } from "lucide-react";
+import { Edit2, Trash2, Menu, Sun, Moon, X } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +19,7 @@ import { useConversations } from "@/hooks/useConversations";
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme, toggleTheme, mounted } = useTheme();
 
   const {
     conversations,
@@ -31,6 +33,24 @@ export function Sidebar() {
   const [editingTitle, setEditingTitle] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const [showNewChatHint, setShowNewChatHint] = useState(false);
+
+  // Проверяем, нужно ли показать подсказку
+  useEffect(() => {
+    const hintDismissed = localStorage.getItem("newChatHintDismissed");
+    if (!hintDismissed && conversations.length === 0) {
+      setShowNewChatHint(true);
+    } else if (conversations.length > 0) {
+      // Скрываем подсказку, если появились чаты
+      setShowNewChatHint(false);
+    }
+  }, [conversations.length]);
+
+  const dismissHint = () => {
+    setShowNewChatHint(false);
+    localStorage.setItem("newChatHintDismissed", "true");
+  };
 
   const activeId = useMemo(
     () =>
@@ -45,9 +65,13 @@ export function Sidebar() {
   };
 
   const saveTitle = (id: string) => {
+    setIsSavingTitle(true);
     updateConversationTitle(id, editingTitle);
-    setEditingId(null);
-    setEditingTitle("");
+    setTimeout(() => {
+      setEditingId(null);
+      setEditingTitle("");
+      setIsSavingTitle(false);
+    }, 300);
   };
 
   const handleDeleteConversation = () => {
@@ -79,22 +103,55 @@ export function Sidebar() {
 
       <aside
         className={`
-          fixed md:relative top-0 left-0 h-screen w-72 bg-white border-r p-4 gap-2 flex flex-col
+          fixed md:relative top-0 left-0 h-screen w-72 bg-white dark:bg-sidebar border-r p-4 gap-2 flex flex-col
           transform transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
           z-40
         `}
       >
-        <h1 className="text-black text-2xl font-bold">ChatBot Console</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-black dark:text-sidebar-foreground text-2xl font-bold">ChatBot Console</h1>
+          {mounted && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleTheme}
+              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              className="h-9 w-9"
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+            </Button>
+          )}
+        </div>
 
-        <Button
-          variant="outline"
-          className="mb-3 w-full"
-          onClick={createConversation}
-        >
-          + New Chat
-        </Button>
+        <div className="relative mb-3">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={createConversation}
+          >
+            + New Chat
+          </Button>
+          {showNewChatHint && (
+            <div className="absolute left-full ml-2 top-0 bg-popover dark:bg-card border border-border rounded-md p-3 shadow-lg w-[220px] z-50 hidden md:block">
+              <button
+                onClick={dismissHint}
+                className="absolute top-1 right-1 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close hint"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <p className="text-sm text-foreground pr-4">
+                Нажмите на эту кнопку, чтобы создать новый чат
+              </p>
+            </div>
+          )}
+        </div>
 
         <Input
           placeholder="Search..."
@@ -118,26 +175,32 @@ export function Sidebar() {
                   <Input
                     value={editingTitle}
                     autoFocus
+                    className={
+                      isSavingTitle
+                        ? "bg-green-50 dark:bg-green-500/20 border-green-300 dark:border-green-500/50"
+                        : ""
+                    }
                     onChange={(e) => setEditingTitle(e.target.value)}
                     onBlur={() => saveTitle(c.id)}
                     onKeyDown={(e) => e.key === "Enter" && saveTitle(c.id)}
                   />
                 ) : (
-                  <span
-                    className="flex-1 truncate"
+                  <button
+                    type="button"
+                    className="flex-1 truncate text-left hover:underline"
                     onClick={() => {
                       router.push(`/chat/${c.id}`);
                       setSidebarOpen(false); // закрываем sidebar при выборе чата
                     }}
                   >
                     {c.title}
-                  </span>
+                  </button>
                 )}
 
                 <Button
                   size="icon"
                   variant="ghost"
-                  name="edit"
+                  aria-label="Edit conversation title"
                   onClick={() => {
                     setEditingId(c.id);
                     setEditingTitle(c.title);
@@ -172,8 +235,8 @@ export function Sidebar() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Delete conversation?</DialogTitle>
-              <DialogDescription className="sr-only">
-                description goes here This action cannot be undone.
+              <DialogDescription>
+                This action cannot be undone. The conversation and all its messages will be permanently deleted.
               </DialogDescription>
             </DialogHeader>
 

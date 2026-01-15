@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
+import DOMPurify from "isomorphic-dompurify";
 import { Message } from "@/shared/types/chat";
 import { formatText } from "@/shared/lib/formatText";
 
@@ -22,12 +23,15 @@ export function MessageList({
     return (
       <div>
         {parts.map((part, i) => {
+          // Используем комбинацию индекса и хеша части для более стабильного key
+          const partHash = part.length > 0 ? part.slice(0, 20).replace(/\s/g, '') : 'empty';
+          const key = `part-${i}-${partHash}`;
           // part — это код или обычный текст
           if (i % 3 === 0) {
             // обычный текст
             return (
               <span
-                key={i}
+                key={key}
                 dangerouslySetInnerHTML={{
                   __html: formatText(part),
                 }}
@@ -36,14 +40,19 @@ export function MessageList({
           } else if (i % 3 === 2) {
             // код
             const lang = parts[i - 1] || "plaintext";
-            const html = Prism.highlight(
+            const highlightedHtml = Prism.highlight(
               part,
               Prism.languages[lang] || Prism.languages.plaintext,
               lang
             );
+            // Санитизируем HTML от Prism перед использованием в dangerouslySetInnerHTML
+            const sanitizedHtml = DOMPurify.sanitize(highlightedHtml, {
+              ALLOWED_TAGS: ["span", "code"],
+              ALLOWED_ATTR: ["class"],
+            });
             return (
               <pre
-                key={i}
+                key={key}
                 style={{
                   position: "relative",
                   background: "#2d2d2d",
@@ -53,9 +62,10 @@ export function MessageList({
                   overflowX: "auto",
                 }}
               >
-                <code dangerouslySetInnerHTML={{ __html: html }} />
+                <code dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
                 <button
                   className="copy-btn"
+                  aria-label="Copy code to clipboard"
                   style={{
                     position: "absolute",
                     top: 4,
@@ -83,10 +93,10 @@ export function MessageList({
     });
   }, [messages]);
 
-  // переподсветка prism
-  useEffect(() => {
-    Prism.highlightAll();
-  }, [messages]);
+  // Переподсветка prism не нужна, так как мы используем Prism.highlight напрямую
+  // useEffect(() => {
+  //   Prism.highlightAll();
+  // }, [messages]);
 
   // copy button
   useEffect(() => {
@@ -113,34 +123,39 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className="max-h-[85vh] overflow-y-auto flex flex-col gap-2 pr-5"
+      className="h-full overflow-y-auto flex flex-col gap-2 pr-5"
     >
       {messages.map((m, i) => (
         <div
           key={m.id}
-          data-testid={m.role === "Assistant" ? `assistant-${m.id}` : undefined}
+          data-testid={m.role === "assistant" ? `assistant-${m.id}` : undefined}
+          className={`${
+            m.role === "user"
+              ? "bg-muted dark:bg-secondary"
+              : "bg-blue-50 dark:bg-card"
+          }`}
           style={{
-            background: m.role === "User" ? "#eee" : "#f6f6ff",
             padding: 8,
             borderRadius: 8,
             maxWidth: "80%",
-            alignSelf: m.role === "User" ? "flex-end" : "flex-start",
+            alignSelf: m.role === "user" ? "flex-end" : "flex-start",
             wordBreak: "break-word",
           }}
         >
-          <strong>{m.role}</strong>
-          <div style={{ marginTop: 4 }}>{renderContent(m.content)}</div>
+          <strong className="dark:text-white dark:font-semibold">{m.role === "user" ? "User" : "Assistant"}</strong>
+          <div className="dark:text-white/95" style={{ marginTop: 4 }}>{renderContent(m.content)}</div>
 
           {m.status === "error" && (
             <button
               onClick={() => onRetry(m.id, messages[i - 1]?.content ?? "")}
-              style={{ marginTop: 4, fontSize: 12, cursor: "pointer" }}
+              className="mt-1 text-xs text-destructive hover:underline"
+              aria-label="Retry sending message"
             >
               Retry
             </button>
           )}
           {m.status === "sending" && (
-            <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            <span className="text-xs text-muted-foreground mt-0.5" aria-live="polite">
               sending…
             </span>
           )}

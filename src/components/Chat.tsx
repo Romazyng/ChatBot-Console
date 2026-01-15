@@ -37,12 +37,12 @@ export function Chat({
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <MessageList messages={messages} onRetry={retry} />
       </div>
 
-      <div className="mt-auto">
+      <div className="shrink-0 pt-4 pb-2">
         <Composer
           onSend={sendMessage}
           disabled={isSending}

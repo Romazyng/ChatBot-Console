@@ -24,12 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-full overflow-hidden`}
       >
         <Sidebar />
-        <div className="flex-1 flex flex-col">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">{children}</div>
       </body>
     </html>
   );

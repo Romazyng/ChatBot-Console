@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Conversation } from "@/shared/types/chat";
 import { loadConversations, saveConversations } from "@/shared/lib/storage";
@@ -25,7 +25,10 @@ export function useConversation(id: string | null) {
   }, [id, router]);
 
   const updateConversation = useCallback((updated: Conversation) => {
-    setConversation(updated);
+    // Используем startTransition для безопасного обновления состояния
+    startTransition(() => {
+      setConversation(updated);
+    });
     const all = loadConversations().map((c) =>
       c.id === updated.id ? updated : c
     );

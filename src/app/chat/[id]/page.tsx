@@ -11,7 +11,7 @@ export default function ChatPage() {
   if (!conversation) return null;
 
   return (
-    <div className="flex-1 flex flex-col p-4">
+    <div className="flex-1 flex flex-col min-h-0 p-4">
       <Chat conversation={conversation} onUpdateConversation={updateConversation} />
     </div>
   );

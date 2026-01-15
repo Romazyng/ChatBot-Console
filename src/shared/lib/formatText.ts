@@ -1,24 +1,39 @@
+import { marked } from "marked";
+import sanitizeHtml from "sanitize-html";
+
 export function formatText(text: string): string {
   if (!text) return "";
 
-  let html = text;
+  const html = marked.parse(text, {
+    breaks: true,
+    gfm: true,
+  });
 
-  // Заголовки
-  html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
-  html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
-  html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
+  const sanitizedText = sanitizeHtml(html as string, {
+    allowedTags: [
+      "p",
+      "br",
+      "strong",
+      "em",
+      "code",
+      "pre",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "a",
+    ],
+    allowedAttributes: {
+      a: ["href", "target"],
+      li: ["data-list"],
+    },
+  });
 
-  //  Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-  //  Italic
-  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
-
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-  // Переносы строк
-  html = html.replace(/\n/g, "<br />");
-
-  return html;
+  return sanitizedText;
 }

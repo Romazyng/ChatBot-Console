@@ -32,9 +32,7 @@ describe("Sidebar", () => {
     const button = screen.getByRole("button", { name: /\+ New Chat/i });
     await user.click(button);
 
-    const chatItem = screen.getByText("New Chat", {
-      selector: "span",
-    });
+    const chatItem = screen.getByRole("button", { name: "+ New Chat" });
 
     expect(chatItem).toBeInTheDocument();
   });

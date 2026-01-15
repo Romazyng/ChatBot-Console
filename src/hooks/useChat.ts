@@ -49,13 +49,13 @@ export function useChat({ initialMessages, onMessagesChange }: UseChatOptions) {
   const sendMessage = useCallback(async (text: string) => {
     const userMessage: Message = {
       id: crypto.randomUUID(),
-      role: "User",
+      role: "user",
       content: text,
     };
 
     const assistantMessage: Message = {
       id: crypto.randomUUID(),
-      role: "Assistant",
+      role: "assistant",
       content: "",
       status: "sending",
     };
@@ -113,25 +113,35 @@ export function useChat({ initialMessages, onMessagesChange }: UseChatOptions) {
         }
       }
 
+      // Завершение потока - убираем статус "sending"
+      isStreamingRef.current = false;
       setMessages((prev) => {
         const updated = prev.map((msg) =>
           msg.id === assistantMessage.id ? { ...msg, status: undefined } : msg
         );
         messagesRef.current = updated;
+        // Вызываем callback асинхронно после завершения потока
+        queueMicrotask(() => {
+          onMessagesChangeRef.current(updated);
+        });
         return updated;
       });
-      isStreamingRef.current = false;
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const error = e as Error;
       const errorStatus: Message["status"] =
-        e.name === "AbortError" ? "stopped" : "error";
+        error.name === "AbortError" ? "stopped" : "error";
+      isStreamingRef.current = false;
       setMessages((prev) => {
         const updated = prev.map((msg) =>
           msg.id === assistantMessage.id ? { ...msg, status: errorStatus } : msg
         );
         messagesRef.current = updated;
+        // Вызываем callback асинхронно при ошибке
+        queueMicrotask(() => {
+          onMessagesChangeRef.current(updated);
+        });
         return updated;
       });
-      isStreamingRef.current = false;
     } finally {
       setIsSending(false);
       setStreamingController(null);
@@ -145,8 +155,9 @@ export function useChat({ initialMessages, onMessagesChange }: UseChatOptions) {
         messagesRef.current = filtered;
         return filtered;
       });
-      // используем useLayoutEffect через ref для вызова sendMessage после обновления
-      sendMessage(originalText);
+      // Вызываем sendMessage после обновления состояния
+      // Используем setTimeout для гарантии обновления состояния перед вызовом
+      setTimeout(() => sendMessage(originalText), 0);
     },
     [sendMessage]
   );

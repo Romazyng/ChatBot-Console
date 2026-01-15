@@ -31,26 +31,31 @@ export function Composer({
 
   const submit = () => {
     const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || trimmed.length > 1200) return;
     onSend(trimmed);
     setValue("");
   };
 
   return (
-    <div className="w-full mx-auto">
-      <InputGroup>
+    <div className="w-full mx-auto max-w-full">
+      <InputGroup className="max-w-full">
         <InputGroupTextarea
           ref={textareaRef}
           value={value}
           placeholder="Enter your message"
-          disabled={disabled || isStreaming}
-          onChange={(e) => setValue(e.target.value)}
+          disabled={disabled || isStreaming || value.length > 1200}
+          onChange={(e) => {
+            if (e.target.value.length <= 1200) {
+              setValue(e.target.value);
+            }
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               submit();
             }
           }}
+          style={{ wordWrap: "break-word", overflowWrap: "break-word" }}
         />
 
         <InputGroupAddon align="block-end">
@@ -66,8 +71,18 @@ export function Composer({
               sending…
             </InputGroupText>
           ) : (
-            <InputGroupText className="text-muted-foreground text-xs">
-              {1200 - value.length} characters left
+            <InputGroupText
+              className={`text-xs ${
+                value.length > 1200
+                  ? "text-red-500 font-semibold"
+                  : value.length > 1000
+                  ? "text-orange-500"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {value.length > 1200
+                ? `${value.length - 1200} characters over limit`
+                : `${1200 - value.length} characters left`}
             </InputGroupText>
           )}
         </InputGroupAddon>
