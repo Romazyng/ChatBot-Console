@@ -1,15 +1,20 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 
+// Настройка marked для безопасного парсинга
+marked.setOptions({
+  breaks: true, // Переносы строк как <br>
+  gfm: true, // GitHub Flavored Markdown
+});
+
 export function formatText(text: string): string {
   if (!text) return "";
 
-  const html = marked.parse(text, {
-    breaks: true,
-    gfm: true,
-  });
+  // Используем marked для парсинга markdown
+  const html = marked.parse(text) as string;
 
-  const sanitizedText = sanitizeHtml(html as string, {
+  // Санитизируем HTML для защиты от XSS с поддержкой атрибутов списков
+  const sanitizedText = sanitizeHtml(html, {
     allowedTags: [
       "p",
       "br",
@@ -30,8 +35,12 @@ export function formatText(text: string): string {
       "a",
     ],
     allowedAttributes: {
+      ...(sanitizeHtml as any).defaults?.allowedAttributes,
+      li: [
+        ...((sanitizeHtml as any).defaults?.allowedAttributes?.li || []),
+        "data-list",
+      ] as any,
       a: ["href", "target"],
-      li: ["data-list"],
     },
   });
 

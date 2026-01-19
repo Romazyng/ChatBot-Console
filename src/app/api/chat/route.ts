@@ -32,7 +32,8 @@ function processUserMessage(message) {
 
 // Обработка и вывод
 const result = processUserMessage(userMessage);
-// Результат можно использовать для дальнейшей обработки
+console.log("Обработанное сообщение:", result.processed);
+console.log("Статистика:", result.stats);
 \`\`\`
 
 ## Как работает этот код:

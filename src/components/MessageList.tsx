@@ -93,7 +93,6 @@ export function MessageList({
     });
   }, [messages]);
 
-  // Переподсветка prism не нужна, так как мы используем Prism.highlight напрямую
   // useEffect(() => {
   //   Prism.highlightAll();
   // }, [messages]);
